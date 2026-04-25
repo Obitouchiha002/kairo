@@ -6,7 +6,8 @@ import { format } from 'date-fns';
 import { GoogleGenAI } from '@google/genai';
 import { TypewriterText } from '@/components/TypewriterText';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export function Journal() {
   const { logs, addLog, addXp } = useKairoStore();

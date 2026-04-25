@@ -5,7 +5,8 @@ import { useKairoStore } from '@/store';
 import { GoogleGenAI } from '@google/genai';
 import { set, keys, get } from 'idb-keyval';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 const MISSIONS = [
   "Introduce yourself and state one thing you are proud of today.",
@@ -125,7 +126,7 @@ export function MirrorMode() {
     }
 
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      if (!getApiKey()) {
         throw new Error("GEMINI_API_KEY is not defined");
       }
       
@@ -170,16 +171,16 @@ Language Preference: ${appLanguage}. ${appLanguage === 'Hinglish' ? 'Write the r
   };
 
   return (
-    <div className="max-w-5xl mx-auto h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col pt-4">
+    <div className="max-w-5xl mx-auto flex flex-col pt-4 pb-12 w-full">
       
-      <div className="flex justify-between items-center mb-6 border-b border-[#222] pb-6">
+      <div className="flex justify-between items-center mb-6 border-b border-[#222] pb-6 shrink-0">
         <div>
           <h2 className="font-bold tracking-tight text-4xl mb-1">Mirror Mode</h2>
           <p className="text-dim mono text-[10px] uppercase tracking-widest mt-1">Confidence Training // Active Context</p>
         </div>
       </div>
 
-      <div className="flex-1 relative rounded-xl overflow-hidden bg-card cyber-border flex flex-col mb-8">
+      <div className="relative min-h-[400px] md:min-h-[500px] rounded-xl overflow-hidden bg-card cyber-border flex flex-col mb-8 shrink-0">
         {/* Video Background */}
         {!cameraError ? (
           <video 
@@ -243,12 +244,18 @@ Language Preference: ${appLanguage}. ${appLanguage === 'Hinglish' ? 'Write the r
               {feedback && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#111]/90 backdrop-blur-lg border border-[#222] p-8 rounded-xl max-w-lg text-center cyber-border"
+                  className="bg-[#111]/90 backdrop-blur-lg border border-[#222] p-8 rounded-xl max-w-lg text-center cyber-border pointer-events-auto"
                 >
                   <div className="flex justify-center mb-4"><CheckCircle2 className="w-8 h-8 text-white" /></div>
                   <h3 className="font-bold text-2xl mb-2 tracking-tight">Mission Complete</h3>
                   <p className="text-white/80 leading-relaxed text-sm">"{feedback}"</p>
-                  <div className="mt-6 mono text-[10px] uppercase text-dim tracking-widest">+100 XP Gained</div>
+                  <div className="mt-6 mb-8 mono text-[10px] uppercase text-dim tracking-widest">+100 XP Gained</div>
+                  <button 
+                    onClick={() => setFeedback(null)}
+                    className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition text-sm"
+                  >
+                    Continue
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>

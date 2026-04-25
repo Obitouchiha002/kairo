@@ -15,8 +15,8 @@ service cloud.firestore {
     function existing() { return resource.data; }
 
     function isValidId(id) { 
-      // Ensure the ID is a string, max 128 chars, and safe characters
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+      // Ensure the ID is a string, max 128 chars
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_.-]+$'); 
     }
 
     // User Profile Validation
@@ -43,8 +43,8 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId) && isValidId(userId) &&
                        isValidUser(incoming()) &&
                        incoming().createdAt == request.time;
@@ -69,8 +69,8 @@ service cloud.firestore {
       }
 
       match /quests/{questId} {
-        allow get: if isOwner(userId) && isValidId(userId) && isValidId(questId);
-        allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+        allow get: if isOwner(userId) && isValidId(questId);
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidId(userId) && isValidId(questId) &&
                          isValidQuest(incoming()) &&
                          incoming().createdAt == request.time;
@@ -94,8 +94,8 @@ service cloud.firestore {
       }
 
       match /logs/{logId} {
-        allow get: if isOwner(userId) && isValidId(userId) && isValidId(logId);
-        allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
                          isValidLog(incoming()) &&
                          (incoming().wins.size() == 0 || incoming().wins[0] is string) &&

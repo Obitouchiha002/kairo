@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { User, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useKairoStore } from '@/store';
@@ -26,7 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { syncFromFirebase } = useKairoStore();
 
   useEffect(() => {
+    let unsubUser: (() => void) | null = null;
+    let unsubQuests: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (unsubUser) unsubUser();
+      if (unsubQuests) unsubQuests();
+
       if (firebaseUser) {
         // Check if user document exists, if not, create it
         const userRef = doc(db, 'users', firebaseUser.uid);
@@ -49,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: firebaseUser.displayName || 'Subject',
             xp: 0,
             level: 1,
+            levelName: 'Initiate',
+            xpRequired: 300,
             streak: 0,
             energyScore: 100,
             focusScore: 50,
@@ -74,41 +82,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         syncFromFirebase(initialData);
 
         // Listen for user changes
-        const unsubUser = onSnapshot(userRef, (doc) => {
+        unsubUser = onSnapshot(userRef, (doc) => {
           if (doc.exists()) {
             syncFromFirebase(doc.data());
           }
+        }, (error) => {
+           console.error("Error in user snapshot listener:", error);
         });
 
         // Listen for quests
         const questsRef = collection(db, 'users', firebaseUser.uid, 'quests');
-        const unsubQuests = onSnapshot(query(questsRef), (snapshot) => {
+        unsubQuests = onSnapshot(query(questsRef), (snapshot) => {
           const quests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
           syncFromFirebase({ quests });
+        }, (error) => {
+           console.error("Error in quests snapshot listener:", error);
         });
 
         setUser(firebaseUser);
         setLoading(false);
-        
-        return () => {
-          unsubUser();
-          unsubQuests();
-        };
       } else {
         setUser(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubUser) unsubUser();
+      if (unsubQuests) unsubQuests();
+    };
   }, []);
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
     try {
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed", error);
+      alert("Login Error: " + (error?.message || "Make sure third-party cookies/popups are enabled, and your Vercel URL is added to Firebase Console -> Authentication -> Settings -> Authorized Domains."));
     }
   };
 

@@ -5,7 +5,8 @@ import { X, Check, ShieldCheck, Camera, Loader2, Sparkles } from 'lucide-react';
 import { TypewriterText } from './TypewriterText';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 function triggerHaptic(pattern = [10]) {
   const { hapticsEnabled } = useKairoStore.getState();
