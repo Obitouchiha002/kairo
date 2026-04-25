@@ -25,6 +25,7 @@ export function MirrorMode() {
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   
@@ -45,8 +46,9 @@ export function MirrorMode() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Camera access denied", err);
+        setCameraError(err?.message || "Failed to access camera or microphone. Please enable them and reload.");
       }
     }
     startCamera();
@@ -179,14 +181,30 @@ Language Preference: ${appLanguage}. ${appLanguage === 'Hinglish' ? 'Write the r
 
       <div className="flex-1 relative rounded-xl overflow-hidden bg-card cyber-border flex flex-col mb-8">
         {/* Video Background */}
-        <video 
-          ref={videoRef}
-          autoPlay 
-          playsInline 
-          muted 
-          className="absolute inset-0 w-full h-full object-cover opacity-60"
-          style={{ transform: 'scaleX(-1)' }}
-        />
+        {!cameraError ? (
+          <video 
+            ref={videoRef}
+            autoPlay 
+            playsInline 
+            muted 
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            style={{ transform: 'scaleX(-1)' }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-6 text-center z-20">
+            <Video className="w-16 h-16 text-[#ff5555] mb-4 opacity-50" />
+            <h3 className="font-bold text-xl mb-2">Camera Access Required</h3>
+            <p className="text-dim text-sm max-w-sm mb-4">
+              {cameraError}
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-gray-200 transition"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         
         {/* Gradients to ensure text is readable */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80" />
