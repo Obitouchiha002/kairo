@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile and stats data",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "streak": { "type": "number" },
+        "energyScore": { "type": "number" },
+        "focusScore": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "socialScore": { "type": "number" },
+        "activeQuestId": { "type": "string" },
+        "questStartTime": { "type": "number" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "taskWindowStart": { "type": "string" },
+        "taskWindowEnd": { "type": "string" },
+        "appLanguage": { "type": "string" },
+        "hapticsEnabled": { "type": "boolean" },
+        "profileImage": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "quest": {
+      "title": "Quest",
+      "description": "A generated quest assigned to a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "xpReward": { "type": "number" },
+        "completed": { "type": "boolean" },
+        "verificationFeedback": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "title", "description", "xpReward", "completed"]
+    },
+    "log": {
+      "title": "Log",
+      "description": "Journal entry log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mood": { "type": "number" },
+        "notes": { "type": "string" },
+        "wins": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "date": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "mood", "notes", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "User profile docs"
+    },
+    "/users/{userId}/quests/{questId}": {
+      "schema": { "$ref": "#/entities/quest" },
+      "description": "Quests that belong strictly to the user"
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": { "$ref": "#/entities/log" },
+      "description": "Journal logs for the user"
+    }
+  }
+}

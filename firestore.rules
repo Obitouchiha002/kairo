@@ -1,0 +1,106 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidId(id) { 
+      // Ensure the ID is a string, max 128 chars, and safe characters
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // User Profile Validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) && data.keys().size() >= 1 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.get('displayName', '') is string && data.get('displayName', '').size() <= 100 &&
+             data.get('xp', 0) is number &&
+             data.get('level', 1) is number &&
+             data.get('streak', 0) is number &&
+             data.get('energyScore', 0) is number &&
+             data.get('focusScore', 0) is number &&
+             data.get('confidenceScore', 0) is number &&
+             data.get('socialScore', 0) is number &&
+             data.get('activeQuestId', '') is string && data.get('activeQuestId', '').size() <= 128 &&
+             data.get('questStartTime', 0) is number &&
+             data.get('taskWindowStart', '') is string && data.get('taskWindowStart', '').size() <= 10 &&
+             data.get('taskWindowEnd', '') is string && data.get('taskWindowEnd', '').size() <= 10 &&
+             data.get('appLanguage', 'Hinglish') is string && data.get('appLanguage', 'Hinglish').size() <= 20 &&
+             data.get('hapticsEnabled', true) is bool &&
+             data.get('profileImage', '') is string && data.get('profileImage', '').size() <= 200000;
+    }
+    
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       incoming().updatedAt == request.time &&
+                       incoming().email == existing().email && 
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['xp', 'level', 'streak', 'energyScore', 'focusScore', 'confidenceScore', 'socialScore', 'activeQuestId', 'questStartTime', 'taskWindowStart', 'taskWindowEnd', 'displayName', 'updatedAt', 'appLanguage', 'hapticsEnabled', 'profileImage']);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Quests Subcollection
+      function isValidQuest(data) {
+        return data.keys().hasAll(['userId', 'title', 'description', 'xpReward', 'completed']) &&
+               data.userId == request.auth.uid &&
+               data.title is string && data.title.size() <= 200 &&
+               data.description is string && data.description.size() <= 1000 &&
+               data.get('category', '') is string && data.get('category', '').size() <= 50 &&
+               data.xpReward is number &&
+               data.completed is bool &&
+               data.get('verificationFeedback', '') is string && data.get('verificationFeedback', '').size() <= 2000;
+      }
+
+      match /quests/{questId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(questId);
+        allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(questId) &&
+                         isValidQuest(incoming()) &&
+                         incoming().createdAt == request.time;
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(questId) &&
+                         isValidQuest(incoming()) &&
+                         incoming().updatedAt == request.time &&
+                         incoming().userId == existing().userId && 
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'verificationFeedback', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(questId);
+      }
+
+      // Logs Subcollection
+      function isValidLog(data) {
+        return data.keys().hasAll(['userId', 'mood', 'notes', 'date']) &&
+               data.userId == request.auth.uid &&
+               data.mood is number &&
+               data.notes is string && data.notes.size() <= 2000 &&
+               data.get('wins', []) is list && data.get('wins', []).size() <= 10 &&
+               data.date is number;
+      }
+
+      match /logs/{logId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+        allow list: if isOwner(userId) && string(userId) == string(request.auth.uid);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+                         isValidLog(incoming()) &&
+                         (incoming().wins.size() == 0 || incoming().wins[0] is string) &&
+                         incoming().createdAt == request.time;
+        allow update: if false; // Logs are immutable
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Kairo",
+  "description": "Futuristic AI-powered self-improvement system and mental growth companion.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
