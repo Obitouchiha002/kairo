@@ -30,10 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         // Check if user document exists, if not, create it
         const userRef = doc(db, 'users', firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
+        let userSnap;
+        try {
+          userSnap = await getDoc(userRef);
+        } catch (e) {
+          console.warn('Failed to get user doc, possibly offline', e);
+        }
         
         let initialData: any = {};
-        if (!userSnap.exists()) {
+        if (userSnap && userSnap.exists()) {
+          initialData = userSnap.data();
+        } else if (!userSnap) {
+          // If offline and no cache, just don't overwrite but use default local state to let app run
+          console.warn('Using default state for offline mode');
+        } else {
           initialData = {
             email: firebaseUser.email,
             displayName: firebaseUser.displayName || 'Subject',
@@ -54,9 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             hapticsEnabled: true,
             profileImage: ''
           };
-          await setDoc(userRef, initialData);
-        } else {
-          initialData = userSnap.data();
+          try {
+            await setDoc(userRef, initialData);
+          } catch(e) {
+            console.warn('Failed to set initial user datam possibly offline', e);
+          }
         }
 
         syncFromFirebase(initialData);

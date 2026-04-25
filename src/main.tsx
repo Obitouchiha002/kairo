@@ -6,8 +6,17 @@ import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
 // Register service worker for PWA
-if ('serviceWorker' in navigator) {
-  registerSW({ immediate: true });
+try {
+  if ('serviceWorker' in navigator) {
+    registerSW({ 
+      immediate: true,
+      onRegisterError(error: any) {
+        console.error('SW registration error', error);
+      }
+    });
+  }
+} catch (e) {
+  console.error('PWA registration failed', e);
 }
 
 createRoot(document.getElementById('root')!).render(
