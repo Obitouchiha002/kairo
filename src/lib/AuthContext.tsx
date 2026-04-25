@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { User, signInAnonymously, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useKairoStore } from '@/store';
@@ -29,6 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubUser: (() => void) | null = null;
     let unsubQuests: (() => void) | null = null;
 
+    const authInit = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (e) {
+        console.error("Auth persistence setup failed", e);
+      }
+    };
+    authInit();
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (unsubUser) unsubUser();
       if (unsubQuests) unsubQuests();
@@ -51,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn('Using default state for offline mode');
         } else {
           initialData = {
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName || 'Subject',
+            email: firebaseUser.uid + '@anonymous.device',
+            displayName: 'Agent ' + firebaseUser.uid.substring(0, 4),
             xp: 0,
             level: 1,
             levelName: 'Initiate',
@@ -102,8 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(firebaseUser);
         setLoading(false);
       } else {
-        setUser(null);
-        setLoading(false);
+        // Automatically sign in anonymously when not logged in
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error("Anonymous authentication failed:", error);
+          setLoading(false);
+        }
       }
     });
 
@@ -115,16 +129,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
     try {
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithPopup(auth, provider);
+      await signInAnonymously(auth);
     } catch (error: any) {
       console.error("Login failed", error);
-      alert("Login Error: " + (error?.message || "Make sure third-party cookies/popups are enabled, and your Vercel URL is added to Firebase Console -> Authentication -> Settings -> Authorized Domains."));
+      alert("Anonymous Login Error: " + (error?.message || "Make sure Anonymous Authentication is enabled in Firebase Console."));
     }
   };
 
