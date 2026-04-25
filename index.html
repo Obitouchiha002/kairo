@@ -9,6 +9,35 @@
     <link rel="icon" type="image/png" href="/kairo-logo.png" />
     <link rel="apple-touch-icon" href="/kairo-logo.png" />
     <title>KAIRO</title>
+    <script>
+      // Global error handler for black screen debugging
+      window.addEventListener('error', (event) => {
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = `
+            <div style="color: white; background: #111; padding: 20px; font-family: monospace; height: 100vh; overflow: auto; z-index: 99999; position: relative;">
+              <h2 style="color: #ff5555">App Crashed</h2>
+              <p>${event.message || 'Unknown Error'}</p>
+              <pre style="color: #aaa">${event.error ? event.error.stack : 'No stack trace'}</pre>
+              <button onclick="window.location.reload()" style="background: white; color: black; padding: 8px 16px; border: none; cursor: pointer; margin-top: 20px;">Reload</button>
+            </div>
+          `;
+        }
+      });
+      window.addEventListener('unhandledrejection', (event) => {
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = `
+            <div style="color: white; background: #111; padding: 20px; font-family: monospace; height: 100vh; overflow: auto; z-index: 99999; position: relative;">
+              <h2 style="color: #ff5555">Unhandled Promise Rejection</h2>
+              <p>${event.reason}</p>
+              <pre style="color: #aaa">${event.reason?.stack || 'No stack trace'}</pre>
+              <button onclick="window.location.reload()" style="background: white; color: black; padding: 8px 16px; border: none; cursor: pointer; margin-top: 20px;">Reload</button>
+            </div>
+          `;
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
