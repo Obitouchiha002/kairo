@@ -3,18 +3,16 @@ import { motion } from 'motion/react';
 import { Home, Target, Focus, Camera, LineChart, BookHeart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActiveQuestOverlay } from './ActiveQuestOverlay';
-import { AutoQuestManager } from './AutoQuestManager';
+import { CompletionModal } from './CompletionModal';
+import { GoalPunishmentManager } from './GoalPunishmentManager';
 
 export function Layout() {
   const location = useLocation();
 
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
-    { icon: Target, label: 'Nexus', path: '/quests' },
-    { icon: Focus, label: 'Focus', path: '/focus' },
+    { icon: Target, label: 'Quests', path: '/quests' },
     { icon: Camera, label: 'Mirror', path: '/mirror' },
-    { icon: LineChart, label: 'Analytics', path: '/analytics' },
-    { icon: BookHeart, label: 'Journal', path: '/journal' },
     { icon: User, label: 'Profile', path: '/profile' }
   ];
 
@@ -65,8 +63,9 @@ export function Layout() {
       </main>
 
       {/* Global Overlays */}
-      <AutoQuestManager />
       <ActiveQuestOverlay />
+      <CompletionModal />
+      <GoalPunishmentManager />
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-card border-t border-[#222] z-50 flex items-center justify-around px-2 pb-safe">

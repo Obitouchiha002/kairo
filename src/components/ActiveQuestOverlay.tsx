@@ -22,6 +22,8 @@ export function ActiveQuestOverlay() {
   const [proofText, setProofText] = useState('');
   const [aiOpinion, setAiOpinion] = useState('');
   const [isVerifyingProcess, setIsVerifyingProcess] = useState(false);
+  const [abortClicks, setAbortClicks] = useState(0);
+  const abortTexts = ["Abort", "Admit Defeat", "I'm Scared", "Coward's Way Out"];
 
   const activeQuest = quests.find(q => q.id === activeQuestId);
 
@@ -125,15 +127,31 @@ Language Preference: ${appLanguage}. ${appLanguage === 'Hinglish' ? 'Write the f
                   <div className="text-4xl font-black mono tabular-nums tracking-tighter text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
                     {displayTime}
                   </div>
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      setVerifying(true);
-                    }}
-                    className="bg-white text-black px-4 py-2 rounded-lg font-bold tracking-widest uppercase text-[10px] flex items-center gap-2 hover:bg-gray-200 active:scale-95 transition-all shadow-xl"
-                  >
-                    <Check className="w-3 h-3" /> Execute
-                  </button>
+                  <div className="flex flex-col items-end gap-3">
+                    <button
+                      onClick={() => {
+                        triggerHaptic();
+                        setVerifying(true);
+                      }}
+                      className="bg-white text-black px-6 py-3 rounded-lg font-bold tracking-widest uppercase text-xs flex items-center gap-2 hover:bg-gray-200 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    >
+                      <Check className="w-4 h-4" /> Execute
+                    </button>
+                    <button
+                      onClick={() => {
+                        triggerHaptic([20, 20]);
+                        if (abortClicks >= abortTexts.length - 1) {
+                          setAbortClicks(0);
+                          cancelActiveQuest();
+                        } else {
+                          setAbortClicks(c => c + 1);
+                        }
+                      }}
+                      className="text-[10px] mono tracking-widest uppercase text-[#ff5555] opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      [{abortTexts[Math.min(abortClicks, abortTexts.length - 1)]}]
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { useKairoStore } from '@/store';
-import { Target, CheckCircle2, Circle, Plus, Play } from 'lucide-react';
+import { Target, CheckCircle2, Circle, Plus, Play, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -10,7 +10,7 @@ const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || (typeof process !
 const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export function Quests() {
-  const { quests, completeQuest, addXp, startQuest, activeQuestId } = useKairoStore();
+  const { quests, completeQuest, addXp, startQuest, activeQuestId, removeQuest } = useKairoStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [questList, setQuestList] = useState(quests);
 
@@ -129,7 +129,7 @@ Language Requirement: You ABSOLUTELY MUST write the title and description in 'Hi
               )}
             </div>
             
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-[10px] mono uppercase tracking-widest px-2 py-1 bg-black rounded-lg border border-[#222]">
                   {quest.category}
@@ -140,6 +140,18 @@ Language Requirement: You ABSOLUTELY MUST write the title and description in 'Hi
                 {quest.title}
               </h3>
               <p className="text-dim text-sm">{quest.description}</p>
+              
+              {quest.completed && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeQuest(quest.id);
+                  }}
+                  className="absolute bottom-0 right-0 p-2 text-dim hover:text-[#ff5555] transition-colors rounded-lg bg-black/40 hover:bg-[#ff5555]/10 border border-transparent hover:border-[#ff5555]/30 z-10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </motion.div>
         ))}

@@ -1,13 +1,20 @@
 import { motion } from 'motion/react';
 import { useKairoStore } from '@/store';
 import { useAuth } from '@/lib/AuthContext';
-import { User, Clock, Bell, LogOut, ChevronRight, Save, Edit2, AlertTriangle } from 'lucide-react';
+import { User, Clock, Bell, LogOut, ChevronRight, Save, Edit2, AlertTriangle, Coins, Shield } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+const BADGE_DESCRIPTIONS: Record<string, {name: string, desc: string, icon: string}> = {
+  'first_blood': { name: 'First Action', desc: 'Completed the first quest', icon: '🎯' },
+  'quest_10': { name: 'Action Taker', desc: 'Completed 10 quests', icon: '⚔️' },
+  'streak_7': { name: '7-Day Streak', desc: 'Maintained a 7 day streak', icon: '🔥' },
+  'level_5': { name: 'Level 5 Agent', desc: 'Reached Level 5', icon: '🌟' }
+};
+
 export function Profile() {
-  const { level, levelName, syncFromFirebase } = useKairoStore();
+  const { level, levelName, badges, coins, syncFromFirebase } = useKairoStore();
   const { user, logout } = useAuth();
   const kairoState = useKairoStore();
 
@@ -20,6 +27,8 @@ export function Profile() {
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [profileImage, setProfileImage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ... (rest of logic)
 
   useEffect(() => {
     // We can assume it is on kairoState via syncFromFirebase
@@ -148,35 +157,37 @@ export function Profile() {
     <div className="max-w-2xl mx-auto space-y-8">
       
       {/* Header */}
-      <div className="flex items-center gap-6 border-b border-[#222] pb-6">
+      <div className="flex flex-col items-center border-b border-[#222] pb-10">
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className="w-24 h-24 rounded-full bg-[#111] border border-[#333] flex items-center justify-center relative overflow-hidden cursor-pointer group"
+          className="w-32 h-32 rounded-full bg-[#111] border border-[#333] flex items-center justify-center relative overflow-hidden cursor-pointer group mb-6 shadow-2xl"
         >
           {profileImage ? (
             <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
           ) : (
-            <User className="w-10 h-10 text-white/50" />
+            <User className="w-12 h-12 text-dim group-hover:text-white transition-colors" />
           )}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-            <span className="text-[10px] mono uppercase font-bold text-white">Edit</span>
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm">
+            <Edit2 className="w-6 h-6 text-white mb-2" />
+            <span className="text-[10px] mono uppercase font-bold text-white tracking-widest">Update</span>
           </div>
         </div>
         <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageUpload} />
         
-        <div className="flex-1">
+        <div className="w-full max-w-sm relative">
           <input 
             type="text" 
             value={displayName} 
             onChange={e => setDisplayName(e.target.value)}
             onBlur={handleSave}
-            placeholder="Your Name"
-            className="font-bold tracking-tight text-3xl mb-1 mt-2 bg-transparent border-b border-transparent hover:border-[#333] focus:border-[#00ff9d] focus:outline-none transition-all block w-full px-1"
+            placeholder="Agent Name"
+            className="font-black tracking-tighter text-4xl mb-2 bg-transparent text-center focus:outline-none focus:text-[#00ff9d] transition-colors block w-full"
           />
-          <p className="text-dim mono text-[10px] uppercase tracking-widest flex items-center gap-2 pl-1 mb-1">
-            Status: Active <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          </p>
-          <p className="text-dim mono text-[10px] uppercase pl-1">{user?.email}</p>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <span className="text-[10px] mono tracking-widest text-[#00ff9d] bg-[#00ff9d]/10 px-3 py-1 rounded-full uppercase border border-[#00ff9d]/20">
+              Identity: {user?.email}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -188,6 +199,43 @@ export function Profile() {
         <div className="bg-card cyber-border p-6 rounded-xl flex flex-col justify-between">
           <span className="mono text-[10px] uppercase tracking-widest text-dim">Level</span>
           <span className="font-black mono italic text-2xl mt-2 glow-text">{level}</span>
+        </div>
+      </div>
+
+      <div className="bg-[#151515] cyber-border p-6 rounded-xl flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+            <Coins className="w-6 h-6 text-yellow-500" />
+          </div>
+          <div>
+            <div className="mono text-[10px] uppercase tracking-widest text-dim">Credit Balance</div>
+            <div className="font-black mono text-xl text-yellow-500 tracking-tight">{coins} KPC</div>
+          </div>
+        </div>
+        <button className="text-[10px] mono uppercase tracking-widest px-4 py-2 border border-[#333] hover:border-[#00ff9d] text-dim hover:text-[#00ff9d] transition-colors rounded-lg">Store (Soon)</button>
+      </div>
+
+      {/* Badges Section */}
+      <div className="space-y-4 pt-4">
+        <h3 className="mono text-[10px] uppercase tracking-widest text-dim mb-4 flex items-center gap-2">
+          <Shield className="w-3 h-3" /> Credentials & Badges
+        </h3>
+        
+        <div className="bg-card cyber-border p-5 rounded-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Object.entries(BADGE_DESCRIPTIONS).map(([id, def]) => {
+              const earned = (badges || []).includes(id);
+              return (
+                <div key={id} className={`flex flex-col items-center justify-center p-3 rounded-xl border ${earned ? 'border-[#00ff9d]/30 bg-[#00ff9d]/5' : 'border-[#222] bg-[#111] opacity-40'} text-center gap-2`}>
+                  <div className={`text-3xl ${!earned && 'grayscale opacity-50'}`}>{def.icon}</div>
+                  <div className={`text-[10px] font-bold uppercase tracking-widest ${earned ? 'text-[#00ff9d]' : 'text-dim'}`}>
+                    {def.name}
+                  </div>
+                  <div className="text-[8px] mono text-dim leading-tight hidden group-hover:block">{def.desc}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -204,6 +252,29 @@ export function Profile() {
               <input type="checkbox" className="sr-only peer" checked={hapticsEnabled} onChange={e => setHapticsEnabled(e.target.checked)} />
               <div className="w-11 h-6 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00ff9d]"></div>
             </label>
+          </div>
+
+          <div className="flex justify-between items-center pb-4 border-b border-[#222]">
+            <div>
+              <div className="text-sm font-bold uppercase tracking-widest">System Notifications</div>
+              <div className="text-[10px] mono text-dim mt-1">Reminders for quests & goals</div>
+            </div>
+            <button 
+              onClick={() => {
+                if (Notification.permission === 'granted') {
+                  alert('Notifications are already enabled.');
+                } else if (Notification.permission !== 'denied') {
+                  Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') alert('Notifications enabled!');
+                  });
+                } else {
+                  alert('Notifications are blocked by your browser strings.');
+                }
+              }}
+              className="px-3 py-1 bg-[#111] border border-[#333] hover:border-[#00ff9d] hover:text-[#00ff9d] text-xs mono uppercase tracking-widest rounded-lg transition-colors"
+            >
+              Enable
+            </button>
           </div>
           
           <div className="flex justify-between items-center pt-2">

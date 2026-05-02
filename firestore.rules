@@ -39,7 +39,10 @@ service cloud.firestore {
              data.get('taskWindowEnd', '') is string && data.get('taskWindowEnd', '').size() <= 10 &&
              data.get('appLanguage', 'Hinglish') is string && data.get('appLanguage', 'Hinglish').size() <= 20 &&
              data.get('hapticsEnabled', true) is bool &&
-             data.get('profileImage', '') is string && data.get('profileImage', '').size() <= 200000;
+             data.get('profileImage', '') is string && data.get('profileImage', '').size() <= 200000 &&
+             data.get('coins', 0) is number &&
+             data.get('badges', []) is list && data.get('badges', []).size() <= 100 &&
+             data.get('dailyGoals', []) is list && data.get('dailyGoals', []).size() <= 100;
     }
     
     match /users/{userId} {
@@ -53,7 +56,7 @@ service cloud.firestore {
                        incoming().updatedAt == request.time &&
                        incoming().email == existing().email && 
                        incoming().createdAt == existing().createdAt &&
-                       incoming().diff(existing()).affectedKeys().hasOnly(['xp', 'level', 'levelName', 'xpRequired', 'streak', 'energyScore', 'focusScore', 'confidenceScore', 'socialScore', 'activeQuestId', 'questStartTime', 'taskWindowStart', 'taskWindowEnd', 'displayName', 'updatedAt', 'appLanguage', 'hapticsEnabled', 'profileImage']);
+                       incoming().diff(existing()).affectedKeys().hasOnly(['xp', 'level', 'levelName', 'xpRequired', 'streak', 'energyScore', 'focusScore', 'confidenceScore', 'socialScore', 'activeQuestId', 'questStartTime', 'taskWindowStart', 'taskWindowEnd', 'displayName', 'updatedAt', 'appLanguage', 'hapticsEnabled', 'profileImage', 'coins', 'badges', 'dailyGoals']);
       allow delete: if isOwner(userId) && isValidId(userId);
 
       // Quests Subcollection

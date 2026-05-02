@@ -8,10 +8,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { Layout } from './components/Layout';
 import { HomeDashboard } from './pages/HomeDashboard';
 import { Quests } from './pages/Quests';
-import { FocusMode } from './pages/FocusMode';
 import { MirrorMode } from './pages/MirrorMode';
-import { Analytics } from './pages/Analytics';
-import { Journal } from './pages/Journal';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { AuthProvider, useAuth } from './lib/AuthContext';
@@ -59,10 +56,7 @@ export default function App() {
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<HomeDashboard />} />
             <Route path="quests" element={<Quests />} />
-            <Route path="focus" element={<FocusMode />} />
             <Route path="mirror" element={<MirrorMode />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="journal" element={<Journal />} />
             <Route path="profile" element={<Profile />} />
           </Route>
         </Routes>

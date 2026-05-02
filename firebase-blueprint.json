@@ -22,7 +22,22 @@
         "taskWindowEnd": { "type": "string" },
         "appLanguage": { "type": "string" },
         "hapticsEnabled": { "type": "boolean" },
-        "profileImage": { "type": "string" }
+        "profileImage": { "type": "string" },
+        "coins": { "type": "number" },
+        "badges": { "type": "array", "items": { "type": "string" } },
+        "dailyGoals": { 
+          "type": "array", 
+          "items": { 
+            "type": "object", 
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "completed": { "type": "boolean" },
+              "failed": { "type": "boolean" },
+              "deadline": { "type": "number" }
+            }
+          }
+        }
       },
       "required": ["email"]
     },

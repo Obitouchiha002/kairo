@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInAnonymously, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useKairoStore } from '@/store';
@@ -7,7 +7,7 @@ import { useKairoStore } from '@/store';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: () => Promise<void>;
+  login: (email?: string, password?: string, isRegistering?: boolean) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn('Using default state for offline mode');
         } else {
           initialData = {
-            email: firebaseUser.uid + '@anonymous.device',
+            email: firebaseUser.email || firebaseUser.uid + '@agent.kairo.os',
             displayName: 'Agent ' + firebaseUser.uid.substring(0, 4),
             xp: 0,
             level: 1,
@@ -79,7 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             taskWindowEnd: '21:00',
             appLanguage: 'Hinglish',
             hapticsEnabled: true,
-            profileImage: ''
+            profileImage: '',
+            dailyGoals: [],
+            badges: [],
+            coins: 0
           };
           try {
             await setDoc(userRef, initialData);
@@ -111,13 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(firebaseUser);
         setLoading(false);
       } else {
-        // Automatically sign in anonymously when not logged in
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error("Anonymous authentication failed:", error);
-          setLoading(false);
-        }
+        setUser(null);
+        setLoading(false);
       }
     });
 
@@ -128,12 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async () => {
+  const login = async (email?: string, password?: string, isRegistering?: boolean) => {
     try {
-      await signInAnonymously(auth);
+      if (!email || !password) throw new Error("Email and password required.");
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
     } catch (error: any) {
       console.error("Login failed", error);
-      alert("Anonymous Login Error: " + (error?.message || "Make sure Anonymous Authentication is enabled in Firebase Console."));
+      throw error;
     }
   };
 
